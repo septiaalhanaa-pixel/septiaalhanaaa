@@ -7,6 +7,8 @@ import {
   INITIAL_CUSTOMERS, INITIAL_BOOKINGS, INITIAL_VOYAGES, INITIAL_USERS, 
   INITIAL_NOTIFICATIONS 
 } from './initialData';
+import { firestoreService, testFirestoreConnection } from './firebase';
+import firebaseConfig from '../../firebase-applet-config.json';
 
 const DB_PREFIX = 'nauticalog_db_v1_';
 const KEYS = {
@@ -50,8 +52,8 @@ function setStorage<T>(key: string, value: T): void {
   }
 }
 
-// Initialize database with default data if empty
-export function initDatabase(): void {
+// Initialize database with default data and sync to Firestore
+export async function initDatabase(): Promise<void> {
   if (!localStorage.getItem(KEYS.VESSELS)) {
     setStorage(KEYS.VESSELS, INITIAL_VESSELS);
   }
@@ -79,18 +81,39 @@ export function initDatabase(): void {
   if (!localStorage.getItem(KEYS.NOTIFICATIONS)) {
     setStorage(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
   }
-  // User starts logged out so login form is shown before entering application
-  if (!localStorage.getItem(KEYS.CONFIG)) {
-    const initialConfig: DatabaseConfig = {
-      provider: 'local_storage',
-      supabaseUrl: '',
-      supabaseAnonKey: '',
-      neonConnectionString: '',
-      firebaseProjectId: '',
-      isConnected: true,
-      lastSyncedAt: new Date().toISOString()
-    };
-    setStorage(KEYS.CONFIG, initialConfig);
+  
+  const initialConfig: DatabaseConfig = {
+    provider: 'firebase',
+    supabaseUrl: '',
+    supabaseAnonKey: '',
+    neonConnectionString: '',
+    firebaseProjectId: firebaseConfig.projectId || 'fit-zenith-kdtd0',
+    isConnected: true,
+    lastSyncedAt: new Date().toISOString()
+  };
+  setStorage(KEYS.CONFIG, initialConfig);
+
+  // Background check & Firestore auto-seeding
+  try {
+    testFirestoreConnection().catch(() => {});
+    // Seed Firestore asynchronously if empty
+    setTimeout(async () => {
+      try {
+        await firestoreService.seedIfEmpty('vessels', getStorage(KEYS.VESSELS, INITIAL_VESSELS));
+        await firestoreService.seedIfEmpty('ports', getStorage(KEYS.PORTS, INITIAL_PORTS));
+        await firestoreService.seedIfEmpty('routes', getStorage(KEYS.ROUTES, INITIAL_ROUTES));
+        await firestoreService.seedIfEmpty('commodities', getStorage(KEYS.COMMODITIES, INITIAL_COMMODITIES));
+        await firestoreService.seedIfEmpty('customers', getStorage(KEYS.CUSTOMERS, INITIAL_CUSTOMERS));
+        await firestoreService.seedIfEmpty('bookings', getStorage(KEYS.BOOKINGS, INITIAL_BOOKINGS));
+        await firestoreService.seedIfEmpty('voyages', getStorage(KEYS.VOYAGES, INITIAL_VOYAGES));
+        await firestoreService.seedIfEmpty('users', getStorage(KEYS.USERS, INITIAL_USERS));
+        await firestoreService.seedIfEmpty('notifications', getStorage(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS));
+      } catch (err) {
+        console.warn('Firestore auto-seed notice:', err);
+      }
+    }, 1000);
+  } catch (e) {
+    console.warn('Init Firestore warning:', e);
   }
 }
 
@@ -167,6 +190,7 @@ export const vesselService = {
       id: `ves-${Date.now().toString(36)}`
     };
     setStorage(KEYS.VESSELS, [newItem, ...items]);
+    firestoreService.saveDoc('vessels', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<Vessel>): Vessel | null {
@@ -176,6 +200,7 @@ export const vesselService = {
     const updated = { ...items[index], ...updates };
     items[index] = updated;
     setStorage(KEYS.VESSELS, items);
+    firestoreService.saveDoc('vessels', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -183,6 +208,7 @@ export const vesselService = {
     const filtered = items.filter(v => v.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.VESSELS, filtered);
+    firestoreService.deleteDoc('vessels', id).catch(() => {});
     return true;
   }
 };
@@ -202,6 +228,7 @@ export const portService = {
       id: `prt-${Date.now().toString(36)}`
     };
     setStorage(KEYS.PORTS, [newItem, ...items]);
+    firestoreService.saveDoc('ports', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<Port>): Port | null {
@@ -211,6 +238,7 @@ export const portService = {
     const updated = { ...items[index], ...updates };
     items[index] = updated;
     setStorage(KEYS.PORTS, items);
+    firestoreService.saveDoc('ports', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -218,6 +246,7 @@ export const portService = {
     const filtered = items.filter(p => p.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.PORTS, filtered);
+    firestoreService.deleteDoc('ports', id).catch(() => {});
     return true;
   }
 };
@@ -237,6 +266,7 @@ export const routeService = {
       id: `rot-${Date.now().toString(36)}`
     };
     setStorage(KEYS.ROUTES, [newItem, ...items]);
+    firestoreService.saveDoc('routes', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<Route>): Route | null {
@@ -246,6 +276,7 @@ export const routeService = {
     const updated = { ...items[index], ...updates };
     items[index] = updated;
     setStorage(KEYS.ROUTES, items);
+    firestoreService.saveDoc('routes', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -253,6 +284,7 @@ export const routeService = {
     const filtered = items.filter(r => r.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.ROUTES, filtered);
+    firestoreService.deleteDoc('routes', id).catch(() => {});
     return true;
   }
 };
@@ -272,6 +304,7 @@ export const commodityService = {
       id: `cmd-${Date.now().toString(36)}`
     };
     setStorage(KEYS.COMMODITIES, [newItem, ...items]);
+    firestoreService.saveDoc('commodities', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<Commodity>): Commodity | null {
@@ -281,6 +314,7 @@ export const commodityService = {
     const updated = { ...items[index], ...updates };
     items[index] = updated;
     setStorage(KEYS.COMMODITIES, items);
+    firestoreService.saveDoc('commodities', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -288,6 +322,7 @@ export const commodityService = {
     const filtered = items.filter(c => c.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.COMMODITIES, filtered);
+    firestoreService.deleteDoc('commodities', id).catch(() => {});
     return true;
   }
 };
@@ -308,6 +343,7 @@ export const customerService = {
       id: `cst-${Date.now().toString(36)}`
     };
     setStorage(KEYS.CUSTOMERS, [newItem, ...items]);
+    firestoreService.saveDoc('customers', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<Customer>): Customer | null {
@@ -317,6 +353,7 @@ export const customerService = {
     const updated = { ...items[index], ...updates };
     items[index] = updated;
     setStorage(KEYS.CUSTOMERS, items);
+    firestoreService.saveDoc('customers', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -324,6 +361,7 @@ export const customerService = {
     const filtered = items.filter(c => c.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.CUSTOMERS, filtered);
+    firestoreService.deleteDoc('customers', id).catch(() => {});
     return true;
   }
 };
@@ -371,6 +409,7 @@ export const bookingService = {
     };
 
     setStorage(KEYS.BOOKINGS, [newBooking, ...items]);
+    firestoreService.saveDoc('bookings', newBooking).catch(() => {});
 
     // Dispatch automatic customer notification
     dispatchAutomatedCustomerNotification(newBooking, initialTracking);
@@ -393,6 +432,7 @@ export const bookingService = {
     const updated = { ...items[index], ...updates, updatedAt: now };
     items[index] = updated;
     setStorage(KEYS.BOOKINGS, items);
+    firestoreService.saveDoc('bookings', updated).catch(() => {});
     return updated;
   },
   updateStatus(id: string, newStatus: BookingStatus, locationName: string, description: string, updatedBy = 'Admin Ops'): Booking | null {
@@ -428,6 +468,7 @@ export const bookingService = {
     const filtered = items.filter(b => b.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.BOOKINGS, filtered);
+    firestoreService.deleteDoc('bookings', id).catch(() => {});
     return true;
   }
 };
@@ -448,6 +489,7 @@ export const voyageService = {
       updatedAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
     };
     setStorage(KEYS.VOYAGES, [newItem, ...items]);
+    firestoreService.saveDoc('voyages', newItem).catch(() => {});
     return newItem;
   },
   update(id: string, updates: Partial<VoyageLog>): VoyageLog | null {
@@ -458,6 +500,7 @@ export const voyageService = {
     const updated = { ...items[index], ...updates, updatedAt: now };
     items[index] = updated;
     setStorage(KEYS.VOYAGES, items);
+    firestoreService.saveDoc('voyages', updated).catch(() => {});
     return updated;
   },
   delete(id: string): boolean {
@@ -465,6 +508,7 @@ export const voyageService = {
     const filtered = items.filter(v => v.id !== id);
     if (filtered.length === items.length) return false;
     setStorage(KEYS.VOYAGES, filtered);
+    firestoreService.deleteDoc('voyages', id).catch(() => {});
     return true;
   }
 };
@@ -482,6 +526,7 @@ export const notificationService = {
       timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16)
     };
     setStorage(KEYS.NOTIFICATIONS, [newItem, ...items]);
+    firestoreService.saveDoc('notifications', newItem).catch(() => {});
     return newItem;
   }
 };

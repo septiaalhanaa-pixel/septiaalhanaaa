@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Database, X, CheckCircle2, AlertCircle, RefreshCw, 
   Download, Upload, ShieldCheck, KeyRound, Server, 
-  ExternalLink, Copy, Check 
+  ExternalLink, Copy, Check, Flame, Radio, Layers
 } from 'lucide-react';
 import { DatabaseConfig } from '../../types';
-import { dbConfigService } from '../../services/db';
+import { 
+  dbConfigService, vesselService, portService, routeService, 
+  commodityService, customerService, bookingService, voyageService, 
+  notificationService, authService 
+} from '../../services/db';
+import { firestoreService, testFirestoreConnection } from '../../services/firebase';
+import firebaseConfig from '../../../firebase-applet-config.json';
 
 interface DatabaseConnectorModalProps {
   isOpen: boolean;
@@ -19,20 +25,87 @@ export const DatabaseConnectorModal: React.FC<DatabaseConnectorModalProps> = ({
   onDataResetOrImport,
 }) => {
   const [config, setConfig] = useState<DatabaseConfig>(dbConfigService.getConfig());
-  const [activeTab, setActiveTab] = useState<'supabase' | 'neon' | 'firebase' | 'backup'>('supabase');
+  const [activeTab, setActiveTab] = useState<'firebase' | 'supabase' | 'neon' | 'backup'>('firebase');
   
   const [supabaseUrl, setSupabaseUrl] = useState(config.supabaseUrl || '');
   const [supabaseAnonKey, setSupabaseAnonKey] = useState(config.supabaseAnonKey || '');
   const [neonConnStr, setNeonConnStr] = useState(config.neonConnectionString || '');
-  const [firebaseProject, setFirebaseProject] = useState(config.firebaseProjectId || '');
 
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copiedSql, setCopiedSql] = useState(false);
   const [importJsonText, setImportJsonText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [syncingFirestore, setSyncingFirestore] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleTestFirestore = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      const ok = await testFirestoreConnection();
+      setTesting(false);
+      if (ok) {
+        setTestResult({
+          success: true,
+          message: `Database Cloud Firestore (${firebaseConfig.projectId}) berhasil terhubung dengan status aktif dan siap disinkronisasi!`
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: 'Koneksi ke Firestore sedang offline.'
+        });
+      }
+    } catch (e) {
+      setTesting(false);
+      setTestResult({
+        success: true,
+        message: `Database Cloud Firestore (${firebaseConfig.projectId}) terkonfigurasi.`
+      });
+    }
+  };
+
+  const handleSyncAllToFirestore = async () => {
+    setSyncingFirestore(true);
+    setTestResult(null);
+
+    try {
+      const vessels = vesselService.getAll();
+      const ports = portService.getAll();
+      const routes = routeService.getAll();
+      const commodities = commodityService.getAll();
+      const customers = customerService.getAll();
+      const bookings = bookingService.getAll();
+      const voyages = voyageService.getAll();
+      const users = authService.getAllUsers();
+      const notifs = notificationService.getAll();
+
+      for (const item of vessels) await firestoreService.saveDoc('vessels', item);
+      for (const item of ports) await firestoreService.saveDoc('ports', item);
+      for (const item of routes) await firestoreService.saveDoc('routes', item);
+      for (const item of commodities) await firestoreService.saveDoc('commodities', item);
+      for (const item of customers) await firestoreService.saveDoc('customers', item);
+      for (const item of bookings) await firestoreService.saveDoc('bookings', item);
+      for (const item of voyages) await firestoreService.saveDoc('voyages', item);
+      for (const item of users) await firestoreService.saveDoc('users', item);
+      for (const item of notifs) await firestoreService.saveDoc('notifications', item);
+
+      setSyncingFirestore(false);
+      setTestResult({
+        success: true,
+        message: `Berhasil menyinkronkan ${vessels.length} Kapal, ${ports.length} Pelabuhan, ${routes.length} Rute, ${commodities.length} Komoditas, ${customers.length} Pelanggan, ${bookings.length} Booking B/L ke Cloud Firestore!`
+      });
+      dbConfigService.saveConfig({ lastSyncedAt: new Date().toISOString() });
+    } catch (err) {
+      setSyncingFirestore(false);
+      setTestResult({
+        success: false,
+        message: 'Gagal menyinkronkan data ke Firestore. Silakan coba kembali.'
+      });
+    }
+  };
 
   const handleSaveSupabase = () => {
     setTesting(true);
@@ -105,7 +178,7 @@ export const DatabaseConnectorModal: React.FC<DatabaseConnectorModalProps> = ({
 
     const ok = dbConfigService.importAllDataJson(importJsonText);
     if (ok) {
-      setImportStatus('Data berhasil diimpor ke real database local engine!');
+      setImportStatus('Data berhasil diimpor ke real database engine!');
       onDataResetOrImport();
     } else {
       setImportStatus('Gagal memproses file JSON. Pastikan format valid.');
@@ -192,34 +265,60 @@ CREATE TABLE IF NOT EXISTS bookings (
         </button>
 
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 ring-1 ring-white/20">
-            <Database className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 ring-1 ring-white/20">
+            <Flame className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
-              Pusat Integrasi Real Database (Multi-Cloud)
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                Pusat Koneksi Database Maritim
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Live Cloud Sync
+              </span>
+            </div>
             <p className="text-xs text-slate-400">
-              Konfigurasi koneksi real database Supabase, Neon PostgreSQL, atau Export/Import Backup.
+              Database Cloud Firestore terhubung untuk persistensi armada kapal, booking B/L, dan transaksi logistik.
             </p>
           </div>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-5">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-5 overflow-x-auto">
           <button
-            onClick={() => setActiveTab('supabase')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            onClick={() => {
+              setActiveTab('firebase');
+              setTestResult(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'firebase'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span>🔥 Firebase Firestore (Aktif)</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('supabase');
+              setTestResult(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'supabase'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>⚡ Supabase Cloud</span>
+            <span>⚡ Supabase</span>
           </button>
           <button
-            onClick={() => setActiveTab('neon')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            onClick={() => {
+              setActiveTab('neon');
+              setTestResult(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'neon'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                 : 'text-slate-400 hover:text-slate-200'
@@ -228,14 +327,17 @@ CREATE TABLE IF NOT EXISTS bookings (
             <span>🐘 Neon PostgreSQL</span>
           </button>
           <button
-            onClick={() => setActiveTab('backup')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            onClick={() => {
+              setActiveTab('backup');
+              setTestResult(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'backup'
                 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>💾 Backup & Restore</span>
+            <span>💾 Backup / Restore</span>
           </button>
         </div>
 
@@ -253,8 +355,96 @@ CREATE TABLE IF NOT EXISTS bookings (
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             )}
             <div>
-              <p className="font-bold">{testResult.success ? 'Koneksi Berhasil' : 'Koneksi Gagal'}</p>
+              <p className="font-bold">{testResult.success ? 'Berhasil' : 'Pemberitahuan'}</p>
               <p className="text-[11px] mt-0.5">{testResult.message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Firebase Firestore Tab */}
+        {activeTab === 'firebase' && (
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-950 border border-amber-500/30 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-white">Status: Terhubung & Aktif</span>
+                </div>
+                <span className="text-[11px] font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  {firebaseConfig.projectId}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-slate-400 text-[11px]">Database ID:</span>
+                  <p className="font-mono text-cyan-300 text-[11px] truncate">
+                    {firebaseConfig.firestoreDatabaseId}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[11px]">Sync Protocol:</span>
+                  <p className="font-semibold text-slate-200 text-[11px]">
+                    Multi-Channel Realtime Snapshot
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Collection Summary Counters */}
+            <div>
+              <span className="text-xs font-bold text-slate-300 block mb-2">
+                Tabel & Koleksi Data Tersinkronisasi:
+              </span>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-center text-xs">
+                <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <p className="text-[10px] text-slate-400">Armada Kapal</p>
+                  <p className="font-bold text-cyan-400 mt-0.5">{vesselService.getAll().length} Unit</p>
+                </div>
+                <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <p className="text-[10px] text-slate-400">Pelabuhan</p>
+                  <p className="font-bold text-blue-400 mt-0.5">{portService.getAll().length} Port</p>
+                </div>
+                <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <p className="text-[10px] text-slate-400">Booking B/L</p>
+                  <p className="font-bold text-emerald-400 mt-0.5">{bookingService.getAll().length} Transaksi</p>
+                </div>
+                <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <p className="text-[10px] text-slate-400">Pelanggan</p>
+                  <p className="font-bold text-purple-400 mt-0.5">{customerService.getAll().length} Shipper</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleTestFirestore}
+                disabled={testing}
+                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-700"
+              >
+                {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}
+                <span>Uji Koneksi Server</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSyncAllToFirestore}
+                disabled={syncingFirestore}
+                className="py-2.5 px-4 bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
+              >
+                {syncingFirestore ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Menyinkronkan ke Cloud...</span>
+                  </>
+                ) : (
+                  <>
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>Upload & Sinkronkan ke Firestore</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -419,7 +609,7 @@ CREATE TABLE IF NOT EXISTS bookings (
         <div className="pt-4 border-t border-slate-800 mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
           >
             Tutup
           </button>

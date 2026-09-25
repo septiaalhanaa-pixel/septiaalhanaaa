@@ -1,0 +1,222 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in NauticaLog maritime system",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "maxLength": 256 },
+        "role": { "type": "string", "enum": ["admin", "ops_manager", "finance", "customer"] },
+        "phone": { "type": "string", "maxLength": 50 },
+        "companyName": { "type": "string", "maxLength": 256 },
+        "avatar": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "email", "name", "role"]
+    },
+    "Vessel": {
+      "title": "Vessel",
+      "description": "Vessel/ship entity in fleet management",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "callSign": { "type": "string", "maxLength": 64 },
+        "imoNumber": { "type": "string", "maxLength": 64 },
+        "mmsi": { "type": "string", "maxLength": 64 },
+        "type": { "type": "string", "maxLength": 64 },
+        "capacityTEU": { "type": "number" },
+        "capacityDWT": { "type": "number" },
+        "yearBuilt": { "type": "number" },
+        "speedKnots": { "type": "number" },
+        "maxSpeedKnots": { "type": "number" },
+        "status": { "type": "string", "maxLength": 64 },
+        "currentLat": { "type": "number" },
+        "currentLng": { "type": "number" },
+        "heading": { "type": "number" },
+        "captain": { "type": "string", "maxLength": 256 },
+        "crewCount": { "type": "number" },
+        "fuelLevelPct": { "type": "number" },
+        "fuelBunkerType": { "type": "string", "maxLength": 32 },
+        "fuelConsumptionPerNM": { "type": "number" },
+        "nextMaintenanceDate": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "name", "imoNumber", "type", "status"]
+    },
+    "Port": {
+      "title": "Port",
+      "description": "Port and terminal hub entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "maxLength": 256 },
+        "city": { "type": "string", "maxLength": 128 },
+        "province": { "type": "string", "maxLength": 128 },
+        "country": { "type": "string", "maxLength": 128 },
+        "berthCapacity": { "type": "number" },
+        "maxDraftMeters": { "type": "number" },
+        "craneCount": { "type": "number" },
+        "operationalHours": { "type": "string", "maxLength": 128 },
+        "contactPhone": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "code", "name", "city", "status"]
+    },
+    "Route": {
+      "title": "Route",
+      "description": "Maritime shipping route entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "maxLength": 256 },
+        "originPortId": { "type": "string", "maxLength": 128 },
+        "destinationPortId": { "type": "string", "maxLength": 128 },
+        "distanceNM": { "type": "number" },
+        "estimatedHours": { "type": "number" },
+        "baseRatePerTEU": { "type": "number" },
+        "baseRatePerTon": { "type": "number" },
+        "status": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "code", "name", "originPortId", "destinationPortId"]
+    },
+    "Commodity": {
+      "title": "Commodity",
+      "description": "Commodity and freight tariff entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "maxLength": 256 },
+        "category": { "type": "string", "maxLength": 128 },
+        "unit": { "type": "string", "maxLength": 32 },
+        "tariffPerUnit": { "type": "number" },
+        "handlingFee": { "type": "number" },
+        "insuranceRatePct": { "type": "number" },
+        "requiresReefer": { "type": "boolean" }
+      },
+      "required": ["id", "code", "name", "category", "unit", "tariffPerUnit"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Shipper customer entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "companyName": { "type": "string", "maxLength": 256 },
+        "contactPerson": { "type": "string", "maxLength": 256 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "whatsapp": { "type": "string", "maxLength": 64 },
+        "email": { "type": "string", "maxLength": 256 },
+        "address": { "type": "string", "maxLength": 500 },
+        "city": { "type": "string", "maxLength": 128 },
+        "taxId": { "type": "string", "maxLength": 64 },
+        "paymentTerms": { "type": "string", "maxLength": 64 },
+        "creditLimit": { "type": "number" },
+        "totalShipments": { "type": "number" },
+        "status": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "code", "companyName", "contactPerson", "phone", "email"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Shipping booking and Bill of Lading (B/L) transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "bookingNumber": { "type": "string", "maxLength": 64 },
+        "blNumber": { "type": "string", "maxLength": 64 },
+        "customerId": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 256 },
+        "vesselId": { "type": "string", "maxLength": 128 },
+        "vesselName": { "type": "string", "maxLength": 256 },
+        "originPortId": { "type": "string", "maxLength": 128 },
+        "destinationPortId": { "type": "string", "maxLength": 128 },
+        "departureDate": { "type": "string", "maxLength": 64 },
+        "estimatedArrivalDate": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "maxLength": 64 },
+        "commodityName": { "type": "string", "maxLength": 256 },
+        "quantity": { "type": "number" },
+        "grandTotal": { "type": "number" },
+        "paymentStatus": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "bookingNumber", "blNumber", "customerId", "vesselId", "status", "grandTotal"]
+    },
+    "VoyageLog": {
+      "title": "VoyageLog",
+      "description": "Vessel voyage log and position tracking record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "voyageNumber": { "type": "string", "maxLength": 64 },
+        "vesselId": { "type": "string", "maxLength": 128 },
+        "vesselName": { "type": "string", "maxLength": 256 },
+        "status": { "type": "string", "maxLength": 64 },
+        "currentLat": { "type": "number" },
+        "currentLng": { "type": "number" },
+        "heading": { "type": "number" },
+        "speedKnots": { "type": "number" }
+      },
+      "required": ["id", "voyageNumber", "vesselId", "status"]
+    },
+    "NotificationLog": {
+      "title": "NotificationLog",
+      "description": "WhatsApp and Email log entries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "recipientPhone": { "type": "string", "maxLength": 64 },
+        "recipientEmail": { "type": "string", "maxLength": 256 },
+        "customerName": { "type": "string", "maxLength": 256 },
+        "bookingNumber": { "type": "string", "maxLength": 64 },
+        "type": { "type": "string", "maxLength": 32 },
+        "title": { "type": "string", "maxLength": 256 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "maxLength": 32 },
+        "timestamp": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "customerName", "type", "title", "message"]
+    }
+  },
+  "firestore": {
+    "/vessels/{vesselId}": {
+      "schema": { "$ref": "entities/Vessel" },
+      "description": "Collection of all marine vessels and AIS location data"
+    },
+    "/ports/{portId}": {
+      "schema": { "$ref": "entities/Port" },
+      "description": "Collection of all seaport hubs and facilities"
+    },
+    "/routes/{routeId}": {
+      "schema": { "$ref": "entities/Route" },
+      "description": "Collection of maritime sea lanes and routes"
+    },
+    "/commodities/{commodityId}": {
+      "schema": { "$ref": "entities/Commodity" },
+      "description": "Collection of commodity types and tariffs"
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "entities/Customer" },
+      "description": "Collection of registered shippers and corporate clients"
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "entities/Booking" },
+      "description": "Collection of cargo bookings and Bill of Lading (B/L) documents"
+    },
+    "/voyages/{voyageId}": {
+      "schema": { "$ref": "entities/VoyageLog" },
+      "description": "Collection of voyage tracking and log history"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "entities/NotificationLog" },
+      "description": "Collection of automated WhatsApp and email logs"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "entities/User" },
+      "description": "Collection of authorized maritime system users"
+    }
+  }
+}

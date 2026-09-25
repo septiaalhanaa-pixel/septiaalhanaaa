@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reusable validation helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Maritime Master Data: Vessels, Ports, Routes, Commodities
+    match /vessels/{vesselId} {
+      allow read: if isValidId(vesselId);
+      allow write: if isValidId(vesselId);
+    }
+
+    match /ports/{portId} {
+      allow read: if isValidId(portId);
+      allow write: if isValidId(portId);
+    }
+
+    match /routes/{routeId} {
+      allow read: if isValidId(routeId);
+      allow write: if isValidId(routeId);
+    }
+
+    match /commodities/{commodityId} {
+      allow read: if isValidId(commodityId);
+      allow write: if isValidId(commodityId);
+    }
+
+    // Shipper Customers
+    match /customers/{customerId} {
+      allow read: if isValidId(customerId);
+      allow write: if isValidId(customerId);
+    }
+
+    // Bookings & Bill of Lading (B/L)
+    match /bookings/{bookingId} {
+      allow read: if isValidId(bookingId);
+      allow write: if isValidId(bookingId);
+    }
+
+    // Voyage Logs
+    match /voyages/{voyageId} {
+      allow read: if isValidId(voyageId);
+      allow write: if isValidId(voyageId);
+    }
+
+    // Notifications & WhatsApp Logs
+    match /notifications/{notificationId} {
+      allow read: if isValidId(notificationId);
+      allow write: if isValidId(notificationId);
+    }
+
+    // Users & System Auth
+    match /users/{userId} {
+      allow read: if isValidId(userId);
+      allow write: if isValidId(userId);
+    }
+
+    // Connection Healthcheck
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+  }
+}
