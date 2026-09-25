@@ -13,56 +13,56 @@ service cloud.firestore {
 
     // Maritime Master Data: Vessels, Ports, Routes, Commodities
     match /vessels/{vesselId} {
-      allow read: if isValidId(vesselId);
+      allow get, list: if true;
       allow write: if isValidId(vesselId);
     }
 
     match /ports/{portId} {
-      allow read: if isValidId(portId);
+      allow get, list: if true;
       allow write: if isValidId(portId);
     }
 
     match /routes/{routeId} {
-      allow read: if isValidId(routeId);
+      allow get, list: if true;
       allow write: if isValidId(routeId);
     }
 
     match /commodities/{commodityId} {
-      allow read: if isValidId(commodityId);
+      allow get, list: if true;
       allow write: if isValidId(commodityId);
     }
 
     // Shipper Customers
     match /customers/{customerId} {
-      allow read: if isValidId(customerId);
+      allow get, list: if true;
       allow write: if isValidId(customerId);
     }
 
     // Bookings & Bill of Lading (B/L)
     match /bookings/{bookingId} {
-      allow read: if isValidId(bookingId);
+      allow get, list: if true;
       allow write: if isValidId(bookingId);
     }
 
-    // Voyage Logs
+    // Voyage Logs & GPS Tracking
     match /voyages/{voyageId} {
-      allow read: if isValidId(voyageId);
+      allow get, list: if true;
       allow write: if isValidId(voyageId);
     }
 
-    // Notifications & WhatsApp Logs
+    // Automated Notifications & WhatsApp Logs
     match /notifications/{notificationId} {
-      allow read: if isValidId(notificationId);
+      allow get, list: if true;
       allow write: if isValidId(notificationId);
     }
 
-    // Users & System Auth
+    // Maritime App Users & Profiles
     match /users/{userId} {
-      allow read: if isValidId(userId);
+      allow get, list: if true;
       allow write: if isValidId(userId);
     }
 
-    // Connection Healthcheck
+    // Healthcheck / Connection Probe
     match /test/{testId} {
       allow read, write: if true;
     }
