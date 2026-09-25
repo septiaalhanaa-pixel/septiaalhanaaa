@@ -79,9 +79,7 @@ export function initDatabase(): void {
   if (!localStorage.getItem(KEYS.NOTIFICATIONS)) {
     setStorage(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
   }
-  if (!localStorage.getItem(KEYS.CURRENT_USER)) {
-    setStorage(KEYS.CURRENT_USER, INITIAL_USERS[0]); // Default to Admin
-  }
+  // User starts logged out so login form is shown before entering application
   if (!localStorage.getItem(KEYS.CONFIG)) {
     const initialConfig: DatabaseConfig = {
       provider: 'local_storage',
@@ -107,7 +105,7 @@ export function onDataChange(callback: () => void): () => void {
 // ======================== AUTH & USERS ========================
 export const authService = {
   getCurrentUser(): User | null {
-    return getStorage<User | null>(KEYS.CURRENT_USER, INITIAL_USERS[0]);
+    return getStorage<User | null>(KEYS.CURRENT_USER, null);
   },
   setCurrentUser(user: User | null): void {
     setStorage(KEYS.CURRENT_USER, user);

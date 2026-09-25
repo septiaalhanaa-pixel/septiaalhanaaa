@@ -9,6 +9,7 @@ import { User, Booking, UserRole } from './types';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar, ActiveTab } from './components/layout/Sidebar';
 import { LoginModal } from './components/auth/LoginModal';
+import { LoginPage } from './components/auth/LoginPage';
 import { DatabaseConnectorModal } from './components/database/DatabaseConnectorModal';
 
 // Views
@@ -70,6 +71,31 @@ export default function App() {
   const handleViewBL = (booking: Booking) => {
     setSelectedBookingForBL(booking);
   };
+
+  // If user is not logged in, show the Login Page before entering the application
+  if (!currentUser) {
+    return (
+      <>
+        <LoginPage
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+          }}
+          onOpenDbConfig={() => setIsDbConfigModalOpen(true)}
+          onQuickTrack={(bl) => {
+            setMapSearchBL(bl);
+          }}
+        />
+
+        <DatabaseConnectorModal
+          isOpen={isDbConfigModalOpen}
+          onClose={() => setIsDbConfigModalOpen(false)}
+          onDataResetOrImport={() => {
+            setCurrentUser(authService.getCurrentUser());
+          }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
