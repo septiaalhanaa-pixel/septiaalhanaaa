@@ -1,0 +1,6 @@
+{
+  "name": "NauticaLog - Sistem Angkutan Laut & Pelacakan Armada Realtime",
+  "description": "Sistem Informasi Manajemen Bisnis Angkutan Laut, Master Data Armada & Rute, Transaksi Surat Muatan & B/L, Dashboard Analitik Performa, Peta Pelacakan AIS Realtime, dan Notifikasi Otomatis Pelanggan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
